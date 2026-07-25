@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Pengaduan Saya - SIGAP{% endblock %}
+
+{% block content %}
+<section class="wrap section">
+  <div class="section-head">
+    <div>
+      <h2>Pengaduan Saya</h2>
+      <p>Lacak status seluruh laporan yang pernah Anda ajukan.</p>
+    </div>
+    <a href="{{ url_for('new_complaint') }}" class="btn btn-primary">+ Buat Pengaduan Baru</a>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card amber">
+      <div class="num">{{ counts.get('pending', 0) }}</div>
+      <div class="label">Menunggu</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ counts.get('verified', 0) + counts.get('processing', 0) }}</div>
+      <div class="label">Diproses</div>
+    </div>
+    <div class="stat-card teal">
+      <div class="num">{{ counts.get('completed', 0) }}</div>
+      <div class="label">Selesai</div>
+    </div>
+    <div class="stat-card rust">
+      <div class="num">{{ counts.get('rejected', 0) }}</div>
+      <div class="label">Ditolak</div>
+    </div>
+  </div>
+
+  {% if complaints %}
+  <div class="ticket-grid">
+    {% for c in complaints %}
+      <a href="{{ url_for('complaint_detail', complaint_id=c.id) }}" class="ticket-card">
+        <div class="ticket-top">
+          <span class="ticket-code">{{ c.reference_code }}</span>
+          <span class="stamp {{ c.status_badge_class() }}">{{ c.status_label() }}</span>
+        </div>
+        <span class="cat-tag">{{ c.category.category_name }}</span>
+        <h3>{{ c.title }}</h3>
+        <div class="meta">📍 {{ c.location }} · {{ c.created_at.strftime('%d %b %Y') }}</div>
+        <p class="desc">{{ c.description }}</p>
+      </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3>Anda belum pernah membuat pengaduan</h3>
+    <p>Laporkan masalah pertama Anda dan dapatkan nomor referensi untuk melacak progresnya.</p>
+    <a href="{{ url_for('new_complaint') }}" class="btn btn-primary" style="margin-top:14px;">Buat Pengaduan</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Notifikasi - SIGAP{% endblock %}
+
+{% block content %}
+<section class="wrap section">
+  <div class="section-head">
+    <div>
+      <h2>Notifikasi</h2>
+      <p>Pemberitahuan status &amp; tanggapan atas pengaduan Anda.</p>
+    </div>
+  </div>
+
+  {% if items %}
+    {% for n in items %}
+      <div class="response-box" style="margin-bottom:12px;">
+        <div class="who">{{ n.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+        <strong>{{ n.title }}</strong><br>
+        {{ n.message }}
+        {% if n.link %}
+          <br><a href="{{ n.link }}" style="color:var(--rust); font-weight:600; font-size:.85rem;">Lihat detail →</a>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    <h3>Belum ada notifikasi</h3>
+    <p>Notifikasi akan muncul di sini saat petugas menanggapi atau mengubah status pengaduan Anda.</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

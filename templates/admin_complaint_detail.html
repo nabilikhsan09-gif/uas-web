@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Kelola {{ complaint.reference_code }} - SIGAP{% endblock %}
+
+{% block content %}
+<section class="wrap auth-wrap">
+  <div class="detail-card">
+    <div class="ticket-top">
+      <span class="ticket-code">{{ complaint.reference_code }}</span>
+      <span class="stamp {{ complaint.status_badge_class() }}">{{ complaint.status_label() }}</span>
+    </div>
+
+    <span class="cat-tag">{{ complaint.category.category_name }}</span>
+    <h2>{{ complaint.title }}</h2>
+    <div class="meta" style="color:var(--text-soft); font-size:.88rem; margin-bottom:16px;">
+      📍 {{ complaint.location }} · Dilaporkan {{ complaint.created_at.strftime('%d %B %Y, %H:%M') }} ·
+      Pelapor: {{ complaint.pelapor.full_name }} ({{ complaint.pelapor.email }})
+    </div>
+
+    {% if complaint.photo %}
+      <img class="detail-photo" src="{{ photo_url(complaint.photo) }}" alt="Foto bukti pengaduan">
+    {% endif %}
+
+    <p>{{ complaint.description }}</p>
+
+    {% if complaint.responses %}
+      <h3 style="margin-top:24px; font-size:1.05rem;">Riwayat Tanggapan</h3>
+      {% for r in complaint.responses %}
+        <div class="response-box">
+          <div class="who">{{ r.admin.full_name if r.admin else "Petugas" }} · {{ r.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+          {{ r.message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <h3 style="margin-top:28px; font-size:1.05rem;">Perbarui Status &amp; Beri Tanggapan</h3>
+    <form method="post">
+      <div class="field">
+        <label for="status">Status Baru</label>
+        <select id="status" name="status">
+          {% for s in statuses %}
+            <option value="{{ s }}" {% if complaint.status == s %}selected{% endif %}>{{ status_labels[s] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="message">Tanggapan Resmi (opsional)</label>
+        <textarea id="message" name="message" placeholder="Tulis penjelasan tindak lanjut untuk pelapor…"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

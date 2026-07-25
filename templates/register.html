@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Daftar - SIGAP{% endblock %}
+
+{% block content %}
+<section class="wrap auth-wrap">
+  <div class="form-card">
+    <h2>Daftar Akun Warga</h2>
+    <p style="color:var(--text-soft); font-size:.9rem; margin-top:-8px;">Buat akun untuk mengajukan dan melacak pengaduan Anda.</p>
+
+    <form method="post">
+      <div class="field">
+        <label for="full_name">Nama Lengkap</label>
+        <input type="text" id="full_name" name="full_name" required>
+      </div>
+      <div class="field">
+        <label for="nik">NIK (Nomor Induk Kependudukan)</label>
+        <input type="text" id="nik" name="nik" minlength="10" maxlength="20" required>
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="field">
+        <label for="phone">No. HP (opsional)</label>
+        <input type="text" id="phone" name="phone">
+      </div>
+      <div class="field">
+        <label for="address">Alamat (opsional)</label>
+        <textarea id="address" name="address" placeholder="Alamat tempat tinggal…"></textarea>
+      </div>
+      <div class="field">
+        <label for="password">Kata Sandi</label>
+        <input type="password" id="password" name="password" required minlength="6">
+        <div class="field-hint">Minimal 6 karakter.</div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Daftar Sekarang</button>
+    </form>
+
+    <p class="auth-note">Sudah punya akun? <a href="{{ url_for('login') }}" style="color:var(--rust); font-weight:600;">Masuk di sini</a></p>
+  </div>
+</section>
+{% endblock %}

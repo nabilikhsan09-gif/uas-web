@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Panel Petugas - SIGAP{% endblock %}
+
+{% block content %}
+<section class="wrap section">
+  <div class="section-head">
+    <div>
+      <h2>Panel Petugas</h2>
+      <p>Kelola seluruh pengaduan yang masuk dari warga.</p>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h4>Pengaduan per Status</h4>
+      <canvas id="statusChart" height="180"></canvas>
+    </div>
+    <div class="chart-card">
+      <h4>Pengaduan per Kategori</h4>
+      <canvas id="categoryChart" height="180"></canvas>
+    </div>
+  </div>
+
+  <form class="filter-bar" method="get">
+    <input type="text" name="q" placeholder="Cari judul atau nomor referensi…" value="{{ q }}">
+    <select name="kategori">
+      <option value="">Semua Kategori</option>
+      {% for cat in categories %}
+        <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>{{ cat.category_name }}</option>
+      {% endfor %}
+    </select>
+    <select name="status">
+      <option value="">Semua Status</option>
+      {% for s in statuses %}
+        <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ status_labels[s] }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-outline btn-sm">Terapkan</button>
+  </form>
+
+  {% if complaints %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Referensi</th>
+          <th>Judul</th>
+          <th>Kategori</th>
+          <th>Pelapor</th>
+          <th>Tanggal</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in complaints %}
+        <tr>
+          <td style="font-family: var(--font-mono);">{{ c.reference_code }}</td>
+          <td>{{ c.title }}</td>
+          <td>{{ c.category.category_name }}</td>
+          <td>{{ c.pelapor.full_name }}</td>
+          <td>{{ c.created_at.strftime('%d %b %Y') }}</td>
+          <td><span class="stamp {{ c.status_badge_class() }}">{{ c.status_label() }}</span></td>
+          <td><a href="{{ url_for('admin_complaint_detail', complaint_id=c.id) }}" class="btn btn-outline btn-sm">Kelola</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3>Tidak ada pengaduan yang cocok</h3>
+    <p>Coba ubah kata kunci atau filter pencarian.</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+  const statusLabels = {{ status_counts.keys()|list|tojson }};
+  const statusData = {{ status_counts.values()|list|tojson }};
+  const categoryLabels = {{ category_counts.keys()|list|tojson }};
+  const categoryData = {{ category_counts.values()|list|tojson }};
+
+  new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+      labels: statusLabels,
+      datasets: [{ data: statusData, backgroundColor: ['#E2932F', '#223458', '#2C6B5D', '#B0432E', '#7c8aa0'] }]
+    },
+    options: { plugins: { legend: { position: 'bottom' } } }
+  });
+
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'bar',
+    data: {
+      labels: categoryLabels,
+      datasets: [{ label: 'Jumlah Pengaduan', data: categoryData, backgroundColor: '#16233F' }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+</script>
+{% endblock %}

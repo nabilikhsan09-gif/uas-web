@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Error {{ code }} - SIGAP{% endblock %}
+
+{% block content %}
+<section class="wrap error-page">
+  <p class="error-code">{{ code }}</p>
+  <h2>{{ message }}</h2>
+  <a href="{{ url_for('index') }}" class="btn btn-primary" style="margin-top:18px;">Kembali ke Beranda</a>
+</section>
+{% endblock %}

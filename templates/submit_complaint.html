@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Buat Pengaduan - SIGAP{% endblock %}
+
+{% block content %}
+<section class="wrap auth-wrap">
+  <div class="form-card wide">
+    <h2>Ajukan Pengaduan Baru</h2>
+    <p style="color:var(--text-soft); font-size:.9rem; margin-top:-8px;">Setelah dikirim, Anda akan menerima nomor referensi untuk melacak status penanganan.</p>
+
+    <form method="post" enctype="multipart/form-data">
+      <div class="field">
+        <label for="title">Judul Pengaduan</label>
+        <input type="text" id="title" name="title" placeholder="Contoh: Lampu jalan mati di Jl. Merdeka" required>
+      </div>
+
+      <div class="field">
+        <label for="category_id">Kategori</label>
+        <select id="category_id" name="category_id" required>
+          <option value="" disabled selected>Pilih kategori…</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.category_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="location">Lokasi Kejadian</label>
+        <input type="text" id="location" name="location" placeholder="Contoh: Jl. Merdeka No. 12, RT 03/RW 05" required>
+      </div>
+
+      <div class="field">
+        <label for="description">Deskripsi Lengkap</label>
+        <textarea id="description" name="description" placeholder="Jelaskan kronologi dan kondisi masalah secara rinci…" required></textarea>
+      </div>
+
+      <div class="field">
+        <label for="photo">Foto Bukti (opsional)</label>
+        <input type="file" id="photo" name="photo" accept=".jpg,.jpeg,.png,.webp">
+        <div class="field-hint">Format JPG/PNG/WEBP, maksimal 3 MB.</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Kirim Pengaduan</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

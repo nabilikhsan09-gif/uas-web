@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}SIGAP - Sistem Pengaduan Masyarakat{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a href="{{ url_for('index') }}" class="brand">
+      <span class="brand-mark">S</span>
+      <span class="brand-text">SIGAP<small>Sistem Informasi Gawat Aduan Publik</small></span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="{{ url_for('index') }}">Beranda</a>
+      {% if current_user.is_authenticated %}
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('admin_dashboard') }}">Panel Petugas</a>
+        {% else %}
+          <a href="{{ url_for('dashboard') }}">Pengaduan Saya</a>
+          <a href="{{ url_for('notifications') }}">Notifikasi</a>
+          <a href="{{ url_for('new_complaint') }}" class="nav-cta">+ Buat Pengaduan</a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}">Keluar ({{ current_user.full_name.split(' ')[0] }})</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Masuk</a>
+        <a href="{{ url_for('register') }}" class="nav-cta">Daftar</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap flash-wrap">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div>
+      <strong>SIGAP</strong> — Sistem Informasi Gawat Aduan Publik.<br>
+      Proyek Ujian Akhir Semester, Pemrograman Web / Teknik Komputer.
+    </div>
+    <div class="footer-stamp">Dicap &amp; diproses secara digital</div>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

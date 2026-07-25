@@ -1,0 +1,12 @@
+venv/
+myenv/
+__pycache__/
+*.pyc
+*.db
+.env
+instance/
+.vercel/
+
+# Foto upload warga - jangan ikut di-commit ke git, cukup strukturnya saja
+static/uploads/*
+!static/uploads/.gitkeep

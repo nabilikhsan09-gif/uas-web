@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}SIGAP - Beranda{% endblock %}
+
+{% block content %}
+<section class="wrap hero">
+  <div>
+    <span class="hero-eyebrow">№ Referensi diterbitkan otomatis untuk tiap laporan</span>
+    <h1>Satu laporan, satu nomor referensi, satu kepastian tindak lanjut.</h1>
+    <p class="lead">SIGAP menghubungkan warga dengan petugas untuk menangani masalah infrastruktur, kebersihan, keamanan, hingga pelayanan publik di lingkungan Anda.</p>
+    <div class="hero-actions">
+      {% if current_user.is_authenticated and not current_user.is_admin %}
+        <a href="{{ url_for('new_complaint') }}" class="btn btn-primary">Buat Pengaduan Baru</a>
+      {% elif not current_user.is_authenticated %}
+        <a href="{{ url_for('register') }}" class="btn btn-primary">Mulai Melapor</a>
+      {% endif %}
+      <a href="#daftar-publik" class="btn btn-outline">Lihat Laporan Publik</a>
+    </div>
+  </div>
+
+  <div class="hero-ticket">
+    <div class="ticket-row"><span>Total Laporan Masuk</span><span class="num">{{ total }}</span></div>
+    <div class="ticket-row"><span>Telah Diselesaikan</span><span class="num">{{ selesai }}</span></div>
+    <div class="ticket-row"><span>Kategori Tersedia</span><span class="num">{{ categories|length }}</span></div>
+    <div class="ticket-row"><span>Status Pelaporan</span><span class="stamp badge-progress">Aktif</span></div>
+  </div>
+</section>
+
+<section class="wrap section" id="daftar-publik">
+  <div class="section-head">
+    <div>
+      <h2>Laporan Publik Terbaru</h2>
+      <p>Identitas pelapor disamarkan pada tampilan publik ini.</p>
+    </div>
+  </div>
+
+  <form class="filter-bar" method="get">
+    <input type="text" name="q" placeholder="Cari judul atau lokasi…" value="{{ q }}">
+    <select name="kategori">
+      <option value="">Semua Kategori</option>
+      {% for cat in categories %}
+        <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>{{ cat.category_name }}</option>
+      {% endfor %}
+    </select>
+    <select name="status">
+      <option value="">Semua Status</option>
+      {% for s in statuses %}
+        <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ status_labels[s] }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-outline btn-sm">Terapkan</button>
+  </form>
+
+  {% if complaints %}
+  <div class="ticket-grid">
+    {% for c in complaints %}
+      <a href="{{ url_for('complaint_detail', complaint_id=c.id) }}" class="ticket-card">
+        <div class="ticket-top">
+          <span class="ticket-code">{{ c.reference_code }}</span>
+          <span class="stamp {{ c.status_badge_class() }}">{{ c.status_label() }}</span>
+        </div>
+        <span class="cat-tag">{{ c.category.category_name }}</span>
+        <h3>{{ c.title }}</h3>
+        <div class="meta">📍 {{ c.location }} · {{ c.created_at.strftime('%d %b %Y') }}</div>
+        <p class="desc">{{ c.description }}</p>
+      </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h3>Belum ada laporan yang cocok</h3>
+    <p>Coba ubah kata kunci atau filter pencarian Anda.</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
