@@ -1,39 +1,8 @@
-"""
-app.py
-SIGAP - Sistem Informasi Gawat Aduan Publik
-Disesuaikan agar cocok dengan skema database `sipemas.sql` buatan sendiri
-(tabel: users, categories, complaints, responses, notifications, activity_logs).
 
-Perubahan penting dari versi awal:
- - Login memakai EMAIL (bukan username, karena tabel users tidak punya kolom itu)
- - Registrasi kini meminta NIK, no. HP, alamat (sesuai kolom di tabel users)
- - role: 'admin' / 'citizen' (bukan 'warga')
- - reference_code menggantikan ticket_code
- - status pengaduan: pending/verified/processing/completed/rejected
- - foto pengaduan disimpan sebagai FILE di static/uploads (path disimpan di kolom `photo`)
- - fitur baru: notifikasi (tabel notifications) & log aktivitas (tabel activity_logs)
-
-Fitur utama (>= 8):
- 1. Registrasi & login (email + password, role admin/citizen)
- 2. Ajukan pengaduan baru (kategori, judul, deskripsi, lokasi, foto)
- 3. Pelacakan status pengaduan pribadi via reference_code
- 4. Dashboard admin: kelola & filter seluruh pengaduan
- 5. Ubah status pengaduan + tanggapan resmi (oleh admin)
- 6. Pencarian & filter pengaduan (kategori, status, kata kunci)
- 7. Statistik pengaduan (grafik Chart.js)
- 8. Daftar pengaduan publik (identitas pelapor disamarkan)
- 9. Upload foto bukti pengaduan (disimpan sebagai file)
-10. Notifikasi ke warga saat status/​tanggapan diperbarui
-11. Log aktivitas pengguna (activity_logs)
-"""
 import os
 import uuid
 from datetime import datetime
 
-# Package cloudinary memvalidasi format CLOUDINARY_URL SAAT di-import (bukan
-# saat dipanggil), jadi kalau formatnya salah ia akan crash sebelum kode kita
-# sempat menangkapnya dengan try/except. Makanya divalidasi & dibersihkan di
-# sini DULU, sebelum baris "import cloudinary" di bawah dieksekusi.
 _cloudinary_url = os.environ.get("CLOUDINARY_URL", "").strip()
 if _cloudinary_url and not _cloudinary_url.startswith("cloudinary://"):
     print(
@@ -58,37 +27,27 @@ from models import db, User, Category, Complaint, Response, Notification, Activi
 
 load_dotenv()
 
-# Cloudinary otomatis membaca env var CLOUDINARY_URL jika tersedia
-# (format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME). Wajib diisi saat
-# deploy ke Vercel karena filesystem-nya tidak permanen.
-#
-# Dibungkus try/except: kalau formatnya salah (tidak diawali "cloudinary://"),
-# ini tidak boleh meng-crash SELURUH aplikasi saat import module.
+
 try:
     cloudinary.config(secure=True)
 except Exception as exc:  # noqa: BLE001
     print(f"[SIGAP] CLOUDINARY_URL tidak valid, upload foto akan pakai mode lokal: {exc}")
 USE_CLOUDINARY = bool(os.environ.get("CLOUDINARY_URL"))
 
-# ---------------------------------------------------------------------------
-# Konfigurasi Aplikasi
-# ---------------------------------------------------------------------------
+
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "sigap-dev-secret-key-ubah-ini")
 
-# Database: default ke MySQL lokal (sesuai nama database di sipemas.sql).
-# Ubah lewat file .env jika kredensial phpMyAdmin/XAMPP/Laragon kamu berbeda.
+
 db_url = os.environ.get("DATABASE_URL", "mysql+pymysql://root:@localhost:3306/sipemas")
 if db_url.startswith("mysql://"):
     db_url = db_url.replace("mysql://", "mysql+pymysql://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 
-app.config["MAX_CONTENT_LENGTH"] = 3 * 1024 * 1024  # 3 MB maks upload foto
+app.config["MAX_CONTENT_LENGTH"] = 3 * 1024 * 1024  
 UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
-# Di Vercel, filesystem read-only (kecuali /tmp) — os.makedirs akan gagal dan
-# meng-crash seluruh fungsi kalau tidak dibungkus try/except. Folder ini hanya
-# benar-benar dibutuhkan saat CLOUDINARY_URL belum diisi (mode lokal).
+
 try:
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 except OSError:
@@ -120,15 +79,7 @@ def generate_reference_code():
 
 
 def save_photo(file_storage):
-    """
-    Simpan foto pengaduan dan kembalikan nilai yang disimpan ke kolom `photo`
-    (varchar(255)).
-
-    - Jika CLOUDINARY_URL tersedia (wajib untuk deploy Vercel): upload ke
-      Cloudinary, kembalikan secure_url (URL penuh, muat di varchar(255)).
-    - Jika tidak (mode pengembangan lokal): simpan sebagai file fisik di
-      static/uploads/ dan kembalikan path relatifnya.
-    """
+    
     if USE_CLOUDINARY:
         result = cloudinary.uploader.upload(file_storage, folder="sigap")
         return result["secure_url"]
@@ -530,15 +481,7 @@ def not_found(e):
     return render_template("error.html", code=404, message="Halaman atau pengaduan tidak ditemukan."), 404
 
 
-# ---------------------------------------------------------------------------
-# Inisialisasi (tabel sudah dibuat lewat sipemas.sql; ini hanya jaga-jaga
-# untuk data awal kategori & akun admin, tidak akan menimpa tabel yang ada)
-#
-# Dibungkus try/except: kalau DATABASE_URL salah/belum diisi saat deploy,
-# ini tidak boleh meng-crash SELURUH fungsi serverless untuk SETIAP request.
-# Error yang sebenarnya tetap akan muncul saat route yang butuh DB dipanggil,
-# dan itu lebih mudah didiagnosis lewat Vercel > Logs.
-# ---------------------------------------------------------------------------
+
 try:
     with app.app_context():
         db.create_all()
