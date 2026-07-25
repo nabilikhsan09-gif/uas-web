@@ -3,6 +3,10 @@ import os
 import uuid
 from datetime import datetime
 
+# Package cloudinary memvalidasi format CLOUDINARY_URL SAAT di-import (bukan
+# saat dipanggil), jadi kalau formatnya salah ia akan crash sebelum kode kita
+# sempat menangkapnya dengan try/except. Makanya divalidasi & dibersihkan di
+# sini DULU, sebelum baris "import cloudinary" di bawah dieksekusi.
 _cloudinary_url = os.environ.get("CLOUDINARY_URL", "").strip()
 if _cloudinary_url and not _cloudinary_url.startswith("cloudinary://"):
     print(
@@ -27,27 +31,47 @@ from models import db, User, Category, Complaint, Response, Notification, Activi
 
 load_dotenv()
 
-
+# Cloudinary otomatis membaca env var CLOUDINARY_URL jika tersedia
+# (format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME). Wajib diisi saat
+# deploy ke Vercel karena filesystem-nya tidak permanen.
+#
+# Dibungkus try/except: kalau formatnya salah (tidak diawali "cloudinary://"),
+# ini tidak boleh meng-crash SELURUH aplikasi saat import module.
 try:
     cloudinary.config(secure=True)
 except Exception as exc:  # noqa: BLE001
     print(f"[SIGAP] CLOUDINARY_URL tidak valid, upload foto akan pakai mode lokal: {exc}")
 USE_CLOUDINARY = bool(os.environ.get("CLOUDINARY_URL"))
 
-
+# ---------------------------------------------------------------------------
+# Konfigurasi Aplikasi
+# ---------------------------------------------------------------------------
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "sigap-dev-secret-key-ubah-ini")
 
-
+# Database: default ke MySQL lokal (sesuai nama database di sipemas.sql).
+# Ubah lewat file .env jika kredensial phpMyAdmin/XAMPP/Laragon kamu berbeda.
 db_url = os.environ.get("DATABASE_URL", "mysql+pymysql://root:@localhost:3306/sipemas")
 if db_url.startswith("mysql://"):
     db_url = db_url.replace("mysql://", "mysql+pymysql://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
+# Pool kecil & tidak menumpuk koneksi — penting di serverless (Vercel), karena
+# tiap cold start bisa bikin koneksi baru, sementara paket gratis layanan
+# database online (mis. filess.io) biasanya membatasi jumlah koneksi
+# bersamaan. pool_size/max_overflow kecil + pool_recycle mencegah koneksi
+# menumpuk atau jadi basi, yang tadinya menyebabkan error 500 sesekali.
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_size": 3,
+    "max_overflow": 2,
+    "pool_recycle": 280,
+}
 
-app.config["MAX_CONTENT_LENGTH"] = 3 * 1024 * 1024  
+app.config["MAX_CONTENT_LENGTH"] = 3 * 1024 * 1024  # 3 MB maks upload foto
 UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
-
+# Di Vercel, filesystem read-only (kecuali /tmp) — os.makedirs akan gagal dan
+# meng-crash seluruh fungsi kalau tidak dibungkus try/except. Folder ini hanya
+# benar-benar dibutuhkan saat CLOUDINARY_URL belum diisi (mode lokal).
 try:
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 except OSError:
@@ -481,6 +505,15 @@ def not_found(e):
     return render_template("error.html", code=404, message="Halaman atau pengaduan tidak ditemukan."), 404
 
 
+@app.errorhandler(500)
+def server_error(e):
+    
+    db.session.rollback()
+    app.logger.error("Internal server error: %s", e)
+    return render_template(
+        "error.html", code=500,
+        message="Terjadi gangguan sementara di server. Silakan coba lagi dalam beberapa saat."
+    ), 500
 
 try:
     with app.app_context():
