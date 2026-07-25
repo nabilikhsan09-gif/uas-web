@@ -1,31 +1,4 @@
-"""
-app.py
-SIGAP - Sistem Informasi Gawat Aduan Publik
-Disesuaikan agar cocok dengan skema database `sipemas.sql` buatan sendiri
-(tabel: users, categories, complaints, responses, notifications, activity_logs).
 
-Perubahan penting dari versi awal:
- - Login memakai EMAIL (bukan username, karena tabel users tidak punya kolom itu)
- - Registrasi kini meminta NIK, no. HP, alamat (sesuai kolom di tabel users)
- - role: 'admin' / 'citizen' (bukan 'warga')
- - reference_code menggantikan ticket_code
- - status pengaduan: pending/verified/processing/completed/rejected
- - foto pengaduan disimpan sebagai FILE di static/uploads (path disimpan di kolom `photo`)
- - fitur baru: notifikasi (tabel notifications) & log aktivitas (tabel activity_logs)
-
-Fitur utama (>= 8):
- 1. Registrasi & login (email + password, role admin/citizen)
- 2. Ajukan pengaduan baru (kategori, judul, deskripsi, lokasi, foto)
- 3. Pelacakan status pengaduan pribadi via reference_code
- 4. Dashboard admin: kelola & filter seluruh pengaduan
- 5. Ubah status pengaduan + tanggapan resmi (oleh admin)
- 6. Pencarian & filter pengaduan (kategori, status, kata kunci)
- 7. Statistik pengaduan (grafik Chart.js)
- 8. Daftar pengaduan publik (identitas pelapor disamarkan)
- 9. Upload foto bukti pengaduan (disimpan sebagai file)
-10. Notifikasi ke warga saat status/​tanggapan diperbarui
-11. Log aktivitas pengguna (activity_logs)
-"""
 import os
 import uuid
 from datetime import datetime
@@ -68,7 +41,13 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 
 app.config["MAX_CONTENT_LENGTH"] = 3 * 1024 * 1024  # 3 MB maks upload foto
 UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# Di Vercel, filesystem read-only (kecuali /tmp) — os.makedirs akan gagal dan
+# meng-crash seluruh fungsi kalau tidak dibungkus try/except. Folder ini hanya
+# benar-benar dibutuhkan saat CLOUDINARY_URL belum diisi (mode lokal).
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+except OSError:
+    pass
 ALLOWED_EXT = {"png", "jpg", "jpeg", "webp"}
 
 db.init_app(app)
@@ -509,11 +488,19 @@ def not_found(e):
 # ---------------------------------------------------------------------------
 # Inisialisasi (tabel sudah dibuat lewat sipemas.sql; ini hanya jaga-jaga
 # untuk data awal kategori & akun admin, tidak akan menimpa tabel yang ada)
+#
+# Dibungkus try/except: kalau DATABASE_URL salah/belum diisi saat deploy,
+# ini tidak boleh meng-crash SELURUH fungsi serverless untuk SETIAP request.
+# Error yang sebenarnya tetap akan muncul saat route yang butuh DB dipanggil,
+# dan itu lebih mudah didiagnosis lewat Vercel > Logs.
 # ---------------------------------------------------------------------------
-with app.app_context():
-    db.create_all()
-    seed_categories()
-    seed_admin()
+try:
+    with app.app_context():
+        db.create_all()
+        seed_categories()
+        seed_admin()
+except Exception as exc:  # noqa: BLE001
+    app.logger.error("Gagal inisialisasi database saat startup: %s", exc)
 
 
 if __name__ == "__main__":
