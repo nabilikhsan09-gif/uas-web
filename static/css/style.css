@@ -57,11 +57,9 @@ a{ color: inherit; text-decoration: none; }
 }
 .brand{ display:flex; align-items:center; gap:12px; }
 .brand-mark{
-  display:flex; align-items:center; justify-content:center;
   width:42px; height:42px; border-radius: 8px;
-  background: var(--amber); color: var(--ink-navy);
-  font-family: var(--font-display); font-weight:700; font-size:1.3rem;
   transform: rotate(-4deg);
+  object-fit: contain;
 }
 .brand-text{ color:#fff; font-family: var(--font-display); font-weight:600; font-size:1.25rem; display:flex; flex-direction:column; line-height:1.1; }
 .brand-text small{ font-family: var(--font-body); font-weight:400; font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; color:#C9D2E4; }

@@ -1,0 +1,21 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect x="10" y="30" width="100" height="60" rx="10" fill="#F2EFE6" stroke="#16233F" stroke-width="4"/>
+
+  <!-- Lubang perforasi kiri & kanan -->
+  <circle cx="10" cy="60" r="8" fill="#16233F"/>
+  <circle cx="110" cy="60" r="8" fill="#16233F"/>
+
+  <!-- Garis putus-putus tengah -->
+  <line x1="60" y1="34" x2="60" y2="86" stroke="#16233F" stroke-width="3" stroke-dasharray="5 5"/>
+
+  <!-- Ikon dokumen di sisi kiri -->
+  <rect x="24" y="48" width="24" height="24" rx="2" fill="#16233F"/>
+  <line x1="29" y1="55" x2="43" y2="55" stroke="#F2EFE6" stroke-width="2"/>
+  <line x1="29" y1="61" x2="43" y2="61" stroke="#F2EFE6" stroke-width="2"/>
+  <line x1="29" y1="67" x2="38" y2="67" stroke="#F2EFE6" stroke-width="2"/>
+
+  <!-- Stempel centang di sisi kanan -->
+  <circle cx="82" cy="60" r="16" fill="none" stroke="#E2932F" stroke-width="4"/>
+  <path d="M74 60 L80 66 L90 52" stroke="#2C6B5D" stroke-width="4" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
