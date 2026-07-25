@@ -1,7 +1,46 @@
+"""
+app.py
+SIGAP - Sistem Informasi Gawat Aduan Publik
+Disesuaikan agar cocok dengan skema database `sipemas.sql` buatan sendiri
+(tabel: users, categories, complaints, responses, notifications, activity_logs).
 
+Perubahan penting dari versi awal:
+ - Login memakai EMAIL (bukan username, karena tabel users tidak punya kolom itu)
+ - Registrasi kini meminta NIK, no. HP, alamat (sesuai kolom di tabel users)
+ - role: 'admin' / 'citizen' (bukan 'warga')
+ - reference_code menggantikan ticket_code
+ - status pengaduan: pending/verified/processing/completed/rejected
+ - foto pengaduan disimpan sebagai FILE di static/uploads (path disimpan di kolom `photo`)
+ - fitur baru: notifikasi (tabel notifications) & log aktivitas (tabel activity_logs)
+
+Fitur utama (>= 8):
+ 1. Registrasi & login (email + password, role admin/citizen)
+ 2. Ajukan pengaduan baru (kategori, judul, deskripsi, lokasi, foto)
+ 3. Pelacakan status pengaduan pribadi via reference_code
+ 4. Dashboard admin: kelola & filter seluruh pengaduan
+ 5. Ubah status pengaduan + tanggapan resmi (oleh admin)
+ 6. Pencarian & filter pengaduan (kategori, status, kata kunci)
+ 7. Statistik pengaduan (grafik Chart.js)
+ 8. Daftar pengaduan publik (identitas pelapor disamarkan)
+ 9. Upload foto bukti pengaduan (disimpan sebagai file)
+10. Notifikasi ke warga saat status/​tanggapan diperbarui
+11. Log aktivitas pengguna (activity_logs)
+"""
 import os
 import uuid
 from datetime import datetime
+
+# Package cloudinary memvalidasi format CLOUDINARY_URL SAAT di-import (bukan
+# saat dipanggil), jadi kalau formatnya salah ia akan crash sebelum kode kita
+# sempat menangkapnya dengan try/except. Makanya divalidasi & dibersihkan di
+# sini DULU, sebelum baris "import cloudinary" di bawah dieksekusi.
+_cloudinary_url = os.environ.get("CLOUDINARY_URL", "").strip()
+if _cloudinary_url and not _cloudinary_url.startswith("cloudinary://"):
+    print(
+        "[SIGAP] CLOUDINARY_URL tidak diawali 'cloudinary://' — diabaikan. "
+        "Upload foto akan memakai mode lokal (tidak permanen di Vercel)."
+    )
+    os.environ.pop("CLOUDINARY_URL", None)
 
 import cloudinary
 import cloudinary.uploader
@@ -22,7 +61,13 @@ load_dotenv()
 # Cloudinary otomatis membaca env var CLOUDINARY_URL jika tersedia
 # (format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME). Wajib diisi saat
 # deploy ke Vercel karena filesystem-nya tidak permanen.
-cloudinary.config(secure=True)
+#
+# Dibungkus try/except: kalau formatnya salah (tidak diawali "cloudinary://"),
+# ini tidak boleh meng-crash SELURUH aplikasi saat import module.
+try:
+    cloudinary.config(secure=True)
+except Exception as exc:  # noqa: BLE001
+    print(f"[SIGAP] CLOUDINARY_URL tidak valid, upload foto akan pakai mode lokal: {exc}")
 USE_CLOUDINARY = bool(os.environ.get("CLOUDINARY_URL"))
 
 # ---------------------------------------------------------------------------
